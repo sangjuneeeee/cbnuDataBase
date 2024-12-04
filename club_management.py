@@ -12,7 +12,7 @@ def create_connection():
             port=1234
         )
         if connection.is_connected():
-            print("데이터베이스에 연결되었습니다.")
+            print("동아리 관리 프로그램에 연결되었습니다.")
         return connection
     except Error as e:
         print(f"데이터베이스 연결 실패: {e}")
@@ -21,7 +21,7 @@ def create_connection():
 def close_connection(connection):
     if connection.is_connected():
         connection.close()
-        print("데이터베이스 연결이 종료되었습니다.")
+        print("동아리 관리 프로그램이 종료되었습니다.")
 
 # 동아리원 관리 함수들
 def view_members(connection):
@@ -678,6 +678,85 @@ def delete_report_generation(connection):
     except ValueError:
         print("입력 값의 형식이 올바르지 않습니다.")
 
+# 회원 상세 정보 조회
+def view_member_details(connection):
+    try:
+        student_id = int(input("조회할 회원의 학번: "))
+        cursor = connection.cursor()
+
+        # MemberDetailView에서 회원 정보 조회
+        sql = "SELECT * FROM MemberDetailView WHERE Student_ID = %s"
+        cursor.execute(sql, (student_id,))
+        row = cursor.fetchone()
+
+        if row:
+            headers = ["학번", "이름", "연락처", "이메일", "역할"]
+            print("\n=== 회원 상세 정보 ===")
+            print(tabulate([row], headers=headers, tablefmt="grid", numalign="center", stralign="center"))
+        else:
+            print("해당 학번의 회원이 없습니다.")
+    except Error as e:
+        print(f"데이터 조회 실패: {e}")
+    except ValueError:
+        print("학번은 숫자여야 합니다.")
+
+# 회원 회비 납부 내역 조회
+def view_member_fee_payments(connection):
+    try:
+        student_id = int(input("회비 내역을 조회할 회원의 학번: "))
+        cursor = connection.cursor()
+
+        # FeePaymentView에서 회비 납부 내역 조회
+        sql = "SELECT Payment_ID, Payment_Date, Amount FROM FeePaymentView WHERE Student_ID = %s"
+        cursor.execute(sql, (student_id,))
+        rows = cursor.fetchall()
+
+        if rows:
+            headers = ["납부ID", "납부일", "금액"]
+            print("\n=== 회원 회비 납부 내역 ===")
+            print(tabulate(rows, headers=headers, tablefmt="grid", numalign="center", stralign="center"))
+        else:
+            print("해당 회원의 회비 납부 내역이 없습니다.")
+    except Error as e:
+        print(f"데이터 조회 실패: {e}")
+    except ValueError:
+        print("학번은 숫자여야 합니다.")
+
+# 회원 활동 내역 조회
+def view_member_activities(connection):
+    try:
+        student_id = int(input("활동 내역을 조회할 회원의 학번: "))
+        cursor = connection.cursor()
+
+        # 스터디 참석 내역 조회
+        sql_study = "SELECT Study_ID, Topic, Date, Status FROM StudyAttendanceView WHERE Student_ID = %s"
+        cursor.execute(sql_study, (student_id,))
+        study_rows = cursor.fetchall()
+
+        # 이벤트 참석 내역 조회
+        sql_event = "SELECT Event_ID, Event_Name, Date_Time, Status FROM EventAttendanceView WHERE Student_ID = %s"
+        cursor.execute(sql_event, (student_id,))
+        event_rows = cursor.fetchall()
+
+        if study_rows:
+            headers = ["스터디ID", "주제", "일정", "상태"]
+            print("\n=== 회원 스터디 참석 내역 ===")
+            print(tabulate(study_rows, headers=headers, tablefmt="grid", numalign="center", stralign="center"))
+        else:
+            print("\n해당 회원의 스터디 참석 내역이 없습니다.")
+
+        if event_rows:
+            headers = ["이벤트ID", "이벤트명", "일시", "상태"]
+            print("\n=== 회원 이벤트 참석 내역 ===")
+            print(tabulate(event_rows, headers=headers, tablefmt="grid", numalign="center", stralign="center"))
+        else:
+            print("\n해당 회원의 이벤트 참석 내역이 없습니다.")
+
+    except Error as e:
+        print(f"데이터 조회 실패: {e}")
+    except ValueError:
+        print("학번은 숫자여야 합니다.")
+
 def main():
     connection = create_connection()
     if not connection:
@@ -698,7 +777,10 @@ def main():
         print("11. 예산 관리 기록 관리")
         print("12. 리포트 관리")
         print("13. 리포트 생성 관리")
-        print("14. 종료")
+        print("14. 회원 상세 정보 조회")  # 새로운 기능 추가
+        print("15. 회원 회비 납부 내역 조회")  # 새로운 기능 추가
+        print("16. 회원 활동 내역 조회")  # 새로운 기능 추가
+        print("17. 종료")
         choice = input("선택: ")
 
         if choice == '1':
@@ -952,6 +1034,15 @@ def main():
                     print("잘못된 선택입니다.")
 
         elif choice == '14':
+            view_member_details(connection)
+
+        elif choice == '15':
+            view_member_fee_payments(connection)
+
+        elif choice == '16':
+            view_member_activities(connection)
+
+        elif choice == '17':
             break
 
         else:
