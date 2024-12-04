@@ -29,7 +29,7 @@ def view_members(connection):
         cursor = connection.cursor()
         cursor.execute("SELECT * FROM Member")
         rows = cursor.fetchall()
-        rows = [[str(item).strip() if isinstance(item, str) else item for item in row] for row in rows]
+        rows = [[str(item).strip() if item is not None else '' for item in row] for row in rows]
 
         print("\n=== 동아리원 전체 조회 ===")
         headers = ["학번", "이름", "연락처", "이메일", "역할"]
@@ -160,7 +160,7 @@ def view_fee_payments(connection):
         cursor = connection.cursor()
         cursor.execute("SELECT * FROM FeePayment")
         rows = cursor.fetchall()
-        rows = [[str(item).strip() if isinstance(item, str) else item for item in row] for row in rows]
+        rows = [[str(item).strip() if item is not None else '' for item in row] for row in rows]
 
         print("\n=== 회비 납부 내역 조회 ===")
         headers = ["납부ID", "학번", "납부일", "금액"]
@@ -208,7 +208,7 @@ def view_study_sessions(connection):
         cursor = connection.cursor()
         cursor.execute("SELECT * FROM StudySession")
         rows = cursor.fetchall()
-        rows = [[str(item).strip() if isinstance(item, str) else item for item in row] for row in rows]
+        rows = [[str(item).strip() if item is not None else '' for item in row] for row in rows]
 
         print("\n=== 스터디 세션 조회 ===")
         headers = ["스터디ID", "주제", "장소", "일정"]
@@ -254,7 +254,7 @@ def view_study_attendance(connection):
         cursor = connection.cursor()
         cursor.execute("SELECT * FROM StudyAttendance")
         rows = cursor.fetchall()
-        rows = [[str(item).strip() if isinstance(item, str) else item for item in row] for row in rows]
+        rows = [[str(item).strip() if item is not None else '' for item in row] for row in rows]
 
         print("\n=== 스터디 참석 내역 조회 ===")
         headers = ["스터디ID", "학번", "상태"]
@@ -303,7 +303,7 @@ def view_events(connection):
         cursor = connection.cursor()
         cursor.execute("SELECT * FROM Event")
         rows = cursor.fetchall()
-        rows = [[str(item).strip() if isinstance(item, str) else item for item in row] for row in rows]
+        rows = [[str(item).strip() if item is not None else '' for item in row] for row in rows]
 
         print("\n=== 이벤트 조회 ===")
         headers = ["이벤트ID", "이름", "일시", "장소", "담당자 학번"]
@@ -352,7 +352,7 @@ def view_event_attendance(connection):
         cursor = connection.cursor()
         cursor.execute("SELECT * FROM EventAttendance")
         rows = cursor.fetchall()
-        rows = [[str(item).strip() if isinstance(item, str) else item for item in row] for row in rows]
+        rows = [[str(item).strip() if item is not None else '' for item in row] for row in rows]
 
         print("\n=== 이벤트 참석 내역 조회 ===")
         headers = ["이벤트ID", "학번", "상태"]
@@ -401,7 +401,7 @@ def view_notices(connection):
         cursor = connection.cursor()
         cursor.execute("SELECT * FROM Notice")
         rows = cursor.fetchall()
-        rows = [[str(item).strip() if isinstance(item, str) else item for item in row] for row in rows]
+        rows = [[str(item).strip() if item is not None else '' for item in row] for row in rows]
 
         print("\n=== 공지사항 조회 ===")
         headers = ["공지ID", "제목", "내용", "작성일"]
@@ -447,10 +447,10 @@ def view_materials(connection):
         cursor = connection.cursor()
         cursor.execute("SELECT * FROM Material")
         rows = cursor.fetchall()
-        rows = [[str(item).strip() if isinstance(item, str) else item for item in row] for row in rows]
+        rows = [[str(item).strip() if item is not None else '' for item in row] for row in rows]
 
         print("\n=== 자료 조회 ===")
-        headers = ["자료ID", "자료명", "유형", "업로드일"]
+        headers = ["자료ID", "자료명", "유형", "업로드일", "파일 경로"]
         print(tabulate(rows, headers=headers, tablefmt="grid", numalign="center", stralign="center"))
     except Error as e:
         print(f"데이터 조회 실패: {e}")
@@ -460,10 +460,11 @@ def add_material(connection):
         name = input("자료명: ")
         type_ = input("유형: ")
         upload_date = input("업로드일 (YYYY-MM-DD): ")
+        file_path = input("파일 경로 또는 URL: ")
 
         cursor = connection.cursor()
-        sql = "INSERT INTO Material (Name, Type, Upload_Date) VALUES (%s, %s, %s)"
-        val = (name, type_, upload_date)
+        sql = "INSERT INTO Material (Name, Type, Upload_Date, File_Path) VALUES (%s, %s, %s, %s)"
+        val = (name, type_, upload_date, file_path)
         cursor.execute(sql, val)
         connection.commit()
         print("자료가 추가되었습니다. 자료ID:", cursor.lastrowid)
@@ -487,61 +488,13 @@ def delete_material(connection):
     except ValueError:
         print("자료ID는 숫자여야 합니다.")
 
-# 자료 접근 관리 함수들
-def view_material_access(connection):
-    try:
-        cursor = connection.cursor()
-        cursor.execute("SELECT * FROM MaterialAccess")
-        rows = cursor.fetchall()
-        rows = [[str(item).strip() if isinstance(item, str) else item for item in row] for row in rows]
-
-        print("\n=== 자료 접근 내역 조회 ===")
-        headers = ["자료ID", "역할명"]
-        print(tabulate(rows, headers=headers, tablefmt="grid", numalign="center", stralign="center"))
-    except Error as e:
-        print(f"데이터 조회 실패: {e}")
-
-def add_material_access(connection):
-    try:
-        material_id = int(input("자료ID: "))
-        role_name = input("역할명: ")
-
-        cursor = connection.cursor()
-        sql = "INSERT INTO MaterialAccess (Material_ID, Role_Name) VALUES (%s, %s)"
-        val = (material_id, role_name)
-        cursor.execute(sql, val)
-        connection.commit()
-        print("자료 접근 권한이 추가되었습니다.")
-    except Error as e:
-        print(f"데이터 추가 실패: {e}")
-    except ValueError:
-        print("자료ID는 숫자여야 합니다.")
-
-def delete_material_access(connection):
-    try:
-        material_id = int(input("자료ID: "))
-        role_name = input("역할명: ")
-        cursor = connection.cursor()
-        sql = "DELETE FROM MaterialAccess WHERE Material_ID = %s AND Role_Name = %s"
-        val = (material_id, role_name)
-        cursor.execute(sql, val)
-        connection.commit()
-        if cursor.rowcount > 0:
-            print("자료 접근 권한이 삭제되었습니다.")
-        else:
-            print("해당 자료 접근 권한이 없습니다.")
-    except Error as e:
-        print(f"데이터 삭제 실패: {e}")
-    except ValueError:
-        print("자료ID는 숫자여야 합니다.")
-
 # 예산 관리 함수들
 def view_budgets(connection):
     try:
         cursor = connection.cursor()
         cursor.execute("SELECT * FROM Budget")
         rows = cursor.fetchall()
-        rows = [[str(item).strip() if isinstance(item, str) else item for item in row] for row in rows]
+        rows = [[str(item).strip() if item is not None else '' for item in row] for row in rows]
 
         print("\n=== 예산 조회 ===")
         headers = ["예산ID", "항목", "금액", "사용일"]
@@ -589,7 +542,7 @@ def view_budget_management(connection):
         cursor = connection.cursor()
         cursor.execute("SELECT * FROM BudgetManagement")
         rows = cursor.fetchall()
-        rows = [[str(item).strip() if isinstance(item, str) else item for item in row] for row in rows]
+        rows = [[str(item).strip() if item is not None else '' for item in row] for row in rows]
 
         print("\n=== 예산 관리 기록 조회 ===")
         headers = ["예산ID", "학번"]
@@ -637,7 +590,7 @@ def view_reports(connection):
         cursor = connection.cursor()
         cursor.execute("SELECT * FROM Report")
         rows = cursor.fetchall()
-        rows = [[str(item).strip() if isinstance(item, str) else item for item in row] for row in rows]
+        rows = [[str(item).strip() if item is not None else '' for item in row] for row in rows]
 
         print("\n=== 리포트 조회 ===")
         headers = ["리포트ID", "유형", "생성일", "내용"]
@@ -683,7 +636,7 @@ def view_report_generation(connection):
         cursor = connection.cursor()
         cursor.execute("SELECT * FROM ReportGeneration")
         rows = cursor.fetchall()
-        rows = [[str(item).strip() if isinstance(item, str) else item for item in row] for row in rows]
+        rows = [[str(item).strip() if item is not None else '' for item in row] for row in rows]
 
         print("\n=== 리포트 생성 내역 조회 ===")
         headers = ["리포트ID", "학번"]
@@ -741,12 +694,11 @@ def main():
         print("7. 이벤트 참석 관리")
         print("8. 공지사항 관리")
         print("9. 자료 관리")
-        print("10. 자료 접근 관리")
-        print("11. 예산 관리")
-        print("12. 예산 관리 기록 관리")
-        print("13. 리포트 관리")
-        print("14. 리포트 생성 관리")
-        print("15. 종료")
+        print("10. 예산 관리")
+        print("11. 예산 관리 기록 관리")
+        print("12. 리포트 관리")
+        print("13. 리포트 생성 관리")
+        print("14. 종료")
         choice = input("선택: ")
 
         if choice == '1':
@@ -925,25 +877,6 @@ def main():
 
         elif choice == '10':
             while True:
-                print("\n=== 자료 접근 관리 ===")
-                print("1. 전체 조회")
-                print("2. 추가")
-                print("3. 삭제")
-                print("4. 뒤로가기")
-                sub_choice = input("선택: ")
-                if sub_choice == '1':
-                    view_material_access(connection)
-                elif sub_choice == '2':
-                    add_material_access(connection)
-                elif sub_choice == '3':
-                    delete_material_access(connection)
-                elif sub_choice == '4':
-                    break
-                else:
-                    print("잘못된 선택입니다.")
-
-        elif choice == '11':
-            while True:
                 print("\n=== 예산 관리 ===")
                 print("1. 전체 조회")
                 print("2. 추가")
@@ -961,7 +894,7 @@ def main():
                 else:
                     print("잘못된 선택입니다.")
 
-        elif choice == '12':
+        elif choice == '11':
             while True:
                 print("\n=== 예산 관리 기록 관리 ===")
                 print("1. 전체 조회")
@@ -980,7 +913,7 @@ def main():
                 else:
                     print("잘못된 선택입니다.")
 
-        elif choice == '13':
+        elif choice == '12':
             while True:
                 print("\n=== 리포트 관리 ===")
                 print("1. 전체 조회")
@@ -999,7 +932,7 @@ def main():
                 else:
                     print("잘못된 선택입니다.")
 
-        elif choice == '14':
+        elif choice == '13':
             while True:
                 print("\n=== 리포트 생성 관리 ===")
                 print("1. 전체 조회")
@@ -1018,7 +951,7 @@ def main():
                 else:
                     print("잘못된 선택입니다.")
 
-        elif choice == '15':
+        elif choice == '14':
             break
 
         else:
